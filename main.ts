@@ -13,13 +13,21 @@
 // Outside the grader's container, MAKEFUN_OUTPUT_DIR stands in for /output:
 //   mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts
 
-import { copyFileSync, cpSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { copyFileSync, cpSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildDossier } from './vendor/makefun-roblox.ts';
 
 const here = fileURLToPath(new URL('.', import.meta.url));
 const out = process.env.MAKEFUN_OUTPUT_DIR ?? '/output';
+
+// Dugem Brainrot build: the place file is rebuilt from this repo's Rojo project
+// before handing in, so game.rbxl always matches src/. Guard: refuse a stale
+// PLAY.json (place_id 0) instead of handing in a dead play link.
+const playLink = JSON.parse(readFileSync(join(here, 'PLAY.json'), 'utf8'));
+if (!playLink.place_id || !playLink.universe_id) {
+  throw new Error('PLAY.json has no real place ids yet — publish the place first');
+}
 
 /** cpSync's filter: leave out every file and directory whose name starts with a dot (.gitkeep, .DS_Store, .git). */
 const notDotted = (path: string): boolean => !basename(path).startsWith('.');
